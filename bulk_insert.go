@@ -1,4 +1,4 @@
-package bulkinsert
+package bulk
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ const (
 	columnPrefix        = "column:"
 )
 
-func BulkInsert(db *gorm.DB, tableName string, bulks []interface{}) error {
+func Insert(db *gorm.DB, tableName string, bulks []interface{}) error {
 	tags, aTags := getTags(bulks)
 	objPlaceholders := len(aTags)
 	fields := strings.Join(aTags, ", ")

@@ -1,4 +1,4 @@
-package bulkinsert
+package bulk
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ func bulkData() []interface{} {
 	return bulkData
 }
 
-func TestBulkInsert(t *testing.T) {
+func TestInsert(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 
@@ -65,7 +65,7 @@ func TestBulkInsert(t *testing.T) {
 	mock.ExpectCommit()
 
 	bulkData := bulkData()
-	err = BulkInsert(gdb, tableName, bulkData)
+	err = Insert(gdb, tableName, bulkData)
 	require.NoError(t, err)
 }
 

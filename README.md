@@ -21,7 +21,7 @@ This library depends on gorm, following command is also necessary unless you've 
 ## Usage
 
 ```go
-bulkinsert.BulkInsert(db, tableName, bulkData)
+bulk.Insert(db, tableName, bulkData)
 ```
 
 ## Example
@@ -35,7 +35,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
-	bulkinsert "github.com/sunary/gorm-bulk-insert"
+	bulk "github.com/sunary/gorm-bulk-insert"
 )
 
 type User struct {
@@ -68,7 +68,7 @@ func main() {
 		)
 	}
 
-	err = bulkinsert.BulkInsert(db, User{}.TableName(), bulkData)
+	err = bulk.Insert(db, User{}.TableName(), bulkData)
 	if err != nil {
 		log.Fatal(err)
 	}

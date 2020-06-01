@@ -1,4 +1,4 @@
-package bulkinsert
+package bulk
 
 import (
 	"strings"
