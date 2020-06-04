@@ -11,6 +11,7 @@ import (
 
 const (
 	MaximumPlaceholders = 65536
+	QSLitePlaceholders  = 999
 	gormTag             = "gorm"
 	columnPrefix        = "column:"
 )
@@ -21,6 +22,10 @@ func Insert(db *gorm.DB, tableName string, bulks []interface{}) error {
 	fields := strings.Join(aTags, ", ")
 
 	batchSize := MaximumPlaceholders / objPlaceholders
+	if strings.HasPrefix(db.Dialect().GetName(), "sqlite") {
+		batchSize = QSLitePlaceholders / objPlaceholders
+	}
+
 	tx := db.Begin()
 
 	for i := 0; i < len(bulks)/batchSize+1; i++ {
