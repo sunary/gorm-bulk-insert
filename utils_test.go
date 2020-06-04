@@ -7,8 +7,8 @@ import (
 
 func Test_toSnakeCase(t *testing.T) {
 	tests := []struct {
-		input    string
-		expected string
+		input string
+		want  string
 	}{
 		{
 			"Name", "name",
@@ -25,8 +25,8 @@ func Test_toSnakeCase(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := toSnakeCase(tt.input); !reflect.DeepEqual(got, tt.expected) {
-			t.Errorf("toSnakeCase() = %v, want %v", got, tt.expected)
+		if got := toSnakeCase(tt.input); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("toSnakeCase(%v) = %v, want %v", tt.input, got, tt.want)
 		}
 	}
 }

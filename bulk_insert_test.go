@@ -73,18 +73,18 @@ func Test_getTags(t *testing.T) {
 	bulkData := bulkData()
 
 	tests := []struct {
-		input    []interface{}
-		expected [2][]string
+		input []interface{}
+		want  [2][]string
 	}{
 		{
-			input:    bulkData,
-			expected: [2][]string{{"", "name", "age", ""}, {"name", "age"}},
+			input: bulkData,
+			want:  [2][]string{{"", "name", "age", ""}, {"name", "age"}},
 		},
 	}
 
 	for _, tt := range tests {
-		if got1, got2 := getTags(tt.input); !reflect.DeepEqual(got1, tt.expected[0]) || !reflect.DeepEqual(got2, tt.expected[1]) {
-			t.Errorf("getTags() = %v, %v, want %v, %v", got1, got2, tt.expected[0], tt.expected[1])
+		if got1, got2 := getTags(tt.input); !reflect.DeepEqual(got1, tt.want[0]) || !reflect.DeepEqual(got2, tt.want[1]) {
+			t.Errorf("getTags(%v) = %v, %v, want %v, %v", tt.input, got1, got2, tt.want[0], tt.want[1])
 		}
 	}
 }
@@ -99,8 +99,8 @@ func Test_sliceValues(t *testing.T) {
 		availableTags []string
 	}
 	tests := []struct {
-		input    input
-		expected []interface{}
+		input input
+		want  []interface{}
 	}{
 		{
 			input: input{
@@ -108,57 +108,57 @@ func Test_sliceValues(t *testing.T) {
 				tags:          []string{"", "name", "age", ""},
 				availableTags: []string{"name", "age"},
 			},
-			expected: []interface{}{
+			want: []interface{}{
 				reflect.ValueOf(insertData[0].UserName).Interface(), reflect.ValueOf(insertData[0].Age).Interface(),
 				reflect.ValueOf(insertData[1].UserName).Interface(), reflect.ValueOf(insertData[1].Age).Interface(),
 			},
 		},
 	}
 	for _, tt := range tests {
-		if got := sliceValues(tt.input.objs, tt.input.tags, tt.input.availableTags); !reflect.DeepEqual(got, tt.expected) {
-			t.Errorf("sliceValues() = %v, want %v", got, tt.expected)
+		if got := sliceValues(tt.input.objs, tt.input.tags, tt.input.availableTags); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("sliceValues(%v, %v, %v) = %v, want %v", tt.input.objs, tt.input.tags, tt.input.availableTags, got, tt.want)
 		}
 	}
 }
 
 func Test_isZeroOfUnderlyingType(t *testing.T) {
 	tests := []struct {
-		input    interface{}
-		expected bool
+		input interface{}
+		want  bool
 	}{
 		{
-			input:    0,
-			expected: true,
+			input: 0,
+			want:  true,
 		},
 		{
-			input:    "",
-			expected: true,
+			input: "",
+			want:  true,
 		},
 		{
-			input:    42,
-			expected: false,
+			input: 42,
+			want:  false,
 		},
 		{
-			input:    "foo",
-			expected: false,
+			input: "foo",
+			want:  false,
 		},
 		{
-			input:    0.0,
-			expected: true,
+			input: 0.0,
+			want:  true,
 		},
 		{
-			input:    0.1,
-			expected: false,
+			input: 0.1,
+			want:  false,
 		},
 		{
-			input:    time.Now(),
-			expected: false,
+			input: time.Now(),
+			want:  false,
 		},
 	}
 
 	for _, tt := range tests {
-		if got := isZeroOfUnderlyingType(tt.input); !reflect.DeepEqual(got, tt.expected) {
-			t.Errorf("isZeroOfUnderlyingType() = %v, want %v", got, tt.expected)
+		if got := isZeroOfUnderlyingType(tt.input); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("isZeroOfUnderlyingType(%v) = %v, want %v", tt.input, got, tt.want)
 		}
 	}
 }
