@@ -18,6 +18,10 @@ type user struct {
 	Hobby    string `gorm:"-"`
 }
 
+func (user) TableName() string {
+	return "tb_user"
+}
+
 func insertData() []user {
 	return []user{
 		{
@@ -43,6 +47,31 @@ func bulkData() []interface{} {
 	return bulkData
 }
 
+func TestBulkInsert(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+
+	defer db.Close()
+
+	gdb, err := gorm.Open("mysql", db)
+	require.NoError(t, err)
+
+	insertData := insertData()
+
+	mock.ExpectBegin()
+	mock.ExpectExec(
+		fmt.Sprintf("INSERT INTO %s", user{}.TableName()),
+	).WithArgs(
+		reflect.ValueOf(insertData[0].UserName).Interface(), reflect.ValueOf(insertData[0].Age).Interface(),
+		reflect.ValueOf(insertData[1].UserName).Interface(), reflect.ValueOf(insertData[1].Age).Interface(),
+	).WillReturnResult(sqlmock.NewResult(2, 2))
+	mock.ExpectCommit()
+
+	bulkData := bulkData()
+	err = BulkInsert(gdb, bulkData)
+	require.NoError(t, err)
+}
+
 func TestInsert(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
@@ -53,7 +82,7 @@ func TestInsert(t *testing.T) {
 	require.NoError(t, err)
 
 	insertData := insertData()
-	tableName := "user"
+	tableName := user{}.TableName()
 
 	mock.ExpectBegin()
 	mock.ExpectExec(
@@ -67,6 +96,24 @@ func TestInsert(t *testing.T) {
 	bulkData := bulkData()
 	err = Insert(gdb, tableName, bulkData)
 	require.NoError(t, err)
+}
+
+func Test_getTableName(t *testing.T) {
+	tests := []struct {
+		input interface{}
+		want  string
+	}{
+		{
+			input: insertData()[0],
+			want:  insertData()[0].TableName(),
+		},
+	}
+
+	for _, tt := range tests {
+		if got := getTableName(tt.input); got != tt.want {
+			t.Errorf("getTableName(%v) = %v want %v", tt.input, got, tt.want)
+		}
+	}
 }
 
 func Test_getTags(t *testing.T) {
