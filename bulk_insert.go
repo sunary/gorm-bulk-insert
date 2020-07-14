@@ -14,8 +14,12 @@ const (
 	QSLitePlaceholders  = 999
 	gormTag             = "gorm"
 	columnPrefix        = "column:"
+	funcTableName       = "TableName"
 )
 
+func BulkInsert(db *gorm.DB, bulks []interface{}) error {
+	return Insert(db, getTableName(bulks[0]), bulks)
+}
 func Insert(db *gorm.DB, tableName string, bulks []interface{}) error {
 	tags, aTags := getTags(bulks)
 	objPlaceholders := len(aTags)
@@ -50,6 +54,25 @@ func Insert(db *gorm.DB, tableName string, bulks []interface{}) error {
 	}
 
 	return tx.Commit().Error
+}
+
+func getTableName(t interface{}) string {
+	st := reflect.TypeOf(t)
+	if _, ok := st.MethodByName(funcTableName); ok {
+		v := reflect.ValueOf(t).MethodByName(funcTableName).Call(nil)
+		if len(v) > 0 {
+			return v[0].String()
+		}
+	}
+
+	name := ""
+	if t := reflect.TypeOf(t); t.Kind() == reflect.Ptr {
+		name = t.Elem().Name()
+	} else {
+		name = t.Name()
+	}
+
+	return toSnakeCase(name)
 }
 
 func getTags(objs []interface{}) ([]string, []string) {

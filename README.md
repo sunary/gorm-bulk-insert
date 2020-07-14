@@ -1,14 +1,10 @@
 # Gorm Bulk Insert
 
-`Gorm Bulk Insert` is a library to implement bulk insert using [gorm](https://github.com/jinzhu/gorm). Execute bulk insert just by passing a slice of struct, as if you were using a gorm regularly.
+`Gorm Bulk Insert` is a library to implement bulk insert using [gorm](https://github.com/jinzhu/gorm).
 
 ## Purpose
 
-When saving a large number of records in database, inserting at once - instead of inserting one by one - leads to significant performance improvement. This is widely known as bulk insert.
-
-Gorm is one of the most popular ORM and contains very developer-friendly features, but bulk insert is not provided.
-
-This library is aimed to solve the bulk insert problem.
+Save bulk records
 
 ## Installation
 
@@ -21,6 +17,8 @@ This library depends on gorm, following command is also necessary unless you've 
 ## Usage
 
 ```go
+bulk.BulkInsert(db, bulkData)
+// or
 bulk.Insert(db, tableName, bulkData)
 ```
 
@@ -68,7 +66,8 @@ func main() {
 		)
 	}
 
-	err = bulk.Insert(db, User{}.TableName(), bulkData)
+    err = bulk.BulkInsert(db, bulkData)
+    // or err = bulk.Insert(db, User{}.TableName(), bulkData)
 	if err != nil {
 		log.Fatal(err)
 	}
