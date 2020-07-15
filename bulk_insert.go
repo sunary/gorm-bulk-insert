@@ -17,10 +17,13 @@ const (
 	funcTableName       = "TableName"
 )
 
+// BulkInsert
 func BulkInsert(db *gorm.DB, bulks []interface{}) error {
-	return Insert(db, getTableName(bulks[0]), bulks)
+	return BulkInsertWithTableName(db, getTableName(bulks[0]), bulks)
 }
-func Insert(db *gorm.DB, tableName string, bulks []interface{}) error {
+
+// BulkInsertWithTableName
+func BulkInsertWithTableName(db *gorm.DB, tableName string, bulks []interface{}) error {
 	tags, aTags := getTags(bulks)
 	objPlaceholders := len(aTags)
 	fields := strings.Join(aTags, ", ")
@@ -54,6 +57,11 @@ func Insert(db *gorm.DB, tableName string, bulks []interface{}) error {
 	}
 
 	return tx.Commit().Error
+}
+
+// Deprecated: Insert is deprecated, using BulkInsertWithTableName instead
+func Insert(db *gorm.DB, tableName string, bulks []interface{}) error {
+	return BulkInsertWithTableName(db, tableName, bulks)
 }
 
 func getTableName(t interface{}) string {

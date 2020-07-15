@@ -19,7 +19,7 @@ This library depends on gorm, following command is also necessary unless you've 
 ```go
 bulk.BulkInsert(db, bulkData)
 // or
-bulk.Insert(db, tableName, bulkData)
+bulk.BulkInsertWithTableName(db, tableName, bulkData)
 ```
 
 ## Example
@@ -67,7 +67,7 @@ func main() {
 	}
 
     err = bulk.BulkInsert(db, bulkData)
-    // or err = bulk.Insert(db, User{}.TableName(), bulkData)
+    // or err = bulk.BulkInsertWithTableName(db, User{}.TableName(), bulkData)
 	if err != nil {
 		log.Fatal(err)
 	}

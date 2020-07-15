@@ -72,7 +72,7 @@ func TestBulkInsert(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestInsert(t *testing.T) {
+func TestBulkInsertWithTableName(t *testing.T) {
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 
@@ -94,7 +94,7 @@ func TestInsert(t *testing.T) {
 	mock.ExpectCommit()
 
 	bulkData := bulkData()
-	err = Insert(gdb, tableName, bulkData)
+	err = BulkInsertWithTableName(gdb, tableName, bulkData)
 	require.NoError(t, err)
 }
 
