@@ -1,6 +1,7 @@
 package bulk
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -63,6 +64,10 @@ func isLowercase(r rune) bool {
 
 func isUppercase(r rune) bool {
 	return r >= 'A' && r <= 'Z'
+}
+
+func escapeSqlName(name string) string {
+	return fmt.Sprintf("`%s`", strings.Trim(name, "`"))
 }
 
 func min(x, y int) int {

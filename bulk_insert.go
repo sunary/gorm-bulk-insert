@@ -34,13 +34,21 @@ func BulkUpsert(db *gorm.DB, bulks []interface{}, uniqueKeys []string) error {
 
 // BulkUpsertWithTableName
 func BulkUpsertWithTableName(db *gorm.DB, tableName string, bulks []interface{}, uniqueKeys []string) error {
+	tableName = escapeSqlName(tableName)
+
 	isUpsert := false
 	if len(uniqueKeys) > 0 {
 		isUpsert = true
 	}
 
 	tags, aTags := getTags(bulks)
-	fields := strings.Join(aTags, ", ")
+
+	escapeTags := make([]string, len(aTags))
+	for i := range aTags {
+		escapeTags[i] = escapeSqlName(aTags[i])
+	}
+	fields := strings.Join(escapeTags, ", ")
+
 	objPlaceholders := len(aTags)
 	if isUpsert {
 		objPlaceholders = len(aTags)*2 - len(uniqueKeys)
@@ -71,7 +79,7 @@ func BulkUpsertWithTableName(db *gorm.DB, tableName string, bulks []interface{},
 		if isUpsert {
 			upsertPhStrs = make([]string, len(onUpdateFields))
 			for j := range onUpdateFields {
-				upsertPhStrs[j] = fmt.Sprintf("%s = ?", onUpdateFields[j])
+				upsertPhStrs[j] = fmt.Sprintf("%s = ?", escapeSqlName(onUpdateFields[j]))
 			}
 		}
 
