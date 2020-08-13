@@ -99,8 +99,6 @@ func TestBulkInsertWithTableName(t *testing.T) {
 }
 
 func TestBulkUpsert(t *testing.T) {
-	t.SkipNow()
-
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err)
 

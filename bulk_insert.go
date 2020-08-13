@@ -88,7 +88,7 @@ func BulkUpsertWithTableName(db *gorm.DB, tableName string, bulks []interface{},
 			upsertPlaceholderStr := strings.Join(upsertPhStrs, ",")
 			for j := 0; j < len(valueArgs); j += numArgs {
 				smt := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s", tableName, fields, placeholderStrs, upsertPlaceholderStr)
-				err := tx.Exec(smt, valueArgs[j:min(j+numArgs, len(valueArgs)-1)]...).Error
+				err := tx.Exec(smt, valueArgs[j:min(j+numArgs, len(valueArgs))]...).Error
 				if err != nil {
 					tx.Rollback()
 					return err
