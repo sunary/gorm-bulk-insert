@@ -77,9 +77,13 @@ func BulkUpsertWithTableName(db *gorm.DB, tableName string, bulks []interface{},
 
 		var upsertPhStrs []string
 		if isUpsert {
-			upsertPhStrs = make([]string, len(onUpdateFields))
-			for j := range onUpdateFields {
-				upsertPhStrs[j] = fmt.Sprintf("%s = ?", escapeSqlName(onUpdateFields[j]))
+			if len(onUpdateFields) == 0 {
+				isUpsert = false
+			} else {
+				upsertPhStrs = make([]string, len(onUpdateFields))
+				for j := range onUpdateFields {
+					upsertPhStrs[j] = fmt.Sprintf("%s = ?", escapeSqlName(onUpdateFields[j]))
+				}
 			}
 		}
 
