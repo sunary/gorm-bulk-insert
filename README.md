@@ -16,10 +16,20 @@ This library depends on gorm, following command is also necessary unless you've 
 
 ## Usage
 
+### BulkInsert
+
 ```go
 bulk.BulkInsert(db, bulkData)
 // or
 bulk.BulkInsertWithTableName(db, tableName, bulkData)
+```
+
+### BulkUpsert
+
+```go
+bulk.BulkUpsert(db, bulkData, uniqueKeys)
+// or
+bulk.BulkUpsertWithTableName(db, tableName, bulkData, uniqueKeys)
 ```
 
 ## Example
@@ -66,13 +76,13 @@ func main() {
 		)
 	}
 
-    err = bulk.BulkInsert(db, bulkData)
-    // or err = bulk.BulkInsertWithTableName(db, User{}.TableName(), bulkData)
+	err = bulk.BulkInsert(db, bulkData)
+	// or err = bulk.BulkInsertWithTableName(db, User{}.TableName(), bulkData)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-    var bulkUpsertData []interface{}
+	var bulkUpsertData []interface{}
 	for i := 0; i < 100; i++ {
 		bulkUpsertData = append(bulkUpsertData,
 			User{
@@ -83,12 +93,11 @@ func main() {
 		)
 	}
 
-    err = bulk.BulkUpsert(db, bulkUpsertData, []string{"name"})
-    // or err = bulk.BulkUpsertWithTableName(db, User{}.TableName(), bulkData, []string{"name"})
+	err = bulk.BulkUpsert(db, bulkUpsertData, []string{"name"})
+	// or err = bulk.BulkUpsertWithTableName(db, User{}.TableName(), bulkData, []string{"name"})
 	if err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 ```
