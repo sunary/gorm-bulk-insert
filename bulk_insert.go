@@ -19,14 +19,32 @@ const (
 
 // BulkInsert
 func BulkInsert(db *gorm.DB, bulks []interface{}) error {
-	return BulkInsertWithTableName(db, getTableName(bulks[0]), bulks)
+	return BulkUpsert(db, bulks, nil)
 }
 
 // BulkInsertWithTableName
 func BulkInsertWithTableName(db *gorm.DB, tableName string, bulks []interface{}) error {
+	return BulkUpsertWithTableName(db, tableName, bulks, nil)
+}
+
+// BulkUpsert
+func BulkUpsert(db *gorm.DB, bulks []interface{}, uniqueKeys []string) error {
+	return BulkUpsertWithTableName(db, getTableName(bulks[0]), bulks, uniqueKeys)
+}
+
+// BulkUpsertWithTableName
+func BulkUpsertWithTableName(db *gorm.DB, tableName string, bulks []interface{}, uniqueKeys []string) error {
+	isUpsert := false
+	if len(uniqueKeys) > 0 {
+		isUpsert = true
+	}
+
 	tags, aTags := getTags(bulks)
-	objPlaceholders := len(aTags)
 	fields := strings.Join(aTags, ", ")
+	objPlaceholders := len(aTags)
+	if isUpsert {
+		objPlaceholders = len(aTags)*2 - len(uniqueKeys)
+	}
 
 	batchSize := MaximumPlaceholders / objPlaceholders
 	if strings.HasPrefix(db.Dialect().GetName(), "sqlite") {
@@ -41,14 +59,28 @@ func BulkInsertWithTableName(db *gorm.DB, tableName string, bulks []interface{})
 			maxBatchIndex = len(bulks)
 		}
 
-		valueArgs := sliceValues(bulks[i*batchSize:maxBatchIndex], tags, aTags)
+		valueArgs, onUpdateFields := sliceValues(bulks[i*batchSize:maxBatchIndex], tags, aTags, uniqueKeys)
 		phStrs := make([]string, maxBatchIndex-i*batchSize)
-		placeholderStrs := "(?" + strings.Repeat(", ?", objPlaceholders-1) + ")"
+		placeholderStrs := "(?" + strings.Repeat(", ?", len(aTags)-1) + ")"
+
+		var upsertPhStrs []string
+		if isUpsert {
+			upsertPhStrs := make([]string, len(onUpdateFields))
+			for j := range onUpdateFields {
+				upsertPhStrs[j] = fmt.Sprintf("%s = ?", onUpdateFields[j])
+			}
+		}
+
 		for j := range bulks[i*batchSize : maxBatchIndex] {
 			phStrs[j] = placeholderStrs
 		}
 
-		smt := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", tableName, fields, strings.Join(phStrs, ",\n"))
+		var smt string
+		if isUpsert {
+			smt = fmt.Sprintf("INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s", tableName, fields, strings.Join(phStrs, ",\n"), strings.Join(upsertPhStrs, ","))
+		} else {
+			smt = fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", tableName, fields, strings.Join(phStrs, ",\n"))
+		}
 		err := tx.Exec(smt, valueArgs...).Error
 		if err != nil {
 			tx.Rollback()
@@ -122,21 +154,61 @@ func getTags(objs []interface{}) ([]string, []string) {
 	return tags, availableTags
 }
 
-func sliceValues(objs []interface{}, tags, aTags []string) []interface{} {
-	availableValues := make([]interface{}, len(objs)*len(aTags))
+func sliceValues(objs []interface{}, tags, aTags, uniqueKeys []string) ([]interface{}, []string) {
+	uniqueTag := map[string]struct{}{}
+	var upsertTags []string
+	isUpsert := false
+	updateSize := len(aTags)
+	if len(uniqueKeys) > 0 && len(uniqueKeys) < len(aTags) {
+		updateSize += updateSize - len(uniqueKeys)
+		isUpsert = true
 
-	c := 0
-	for i := range objs {
-		v := reflect.ValueOf(objs[i])
-		for j := 0; j < v.NumField(); j++ {
-			if tags[j] != "" {
-				availableValues[c] = v.Field(j).Interface()
-				c += 1
+		for i := range uniqueKeys {
+			uniqueTag[uniqueKeys[i]] = struct{}{}
+		}
+
+		upsertTags = make([]string, len(aTags)-len(uniqueKeys))
+		j := 0
+		for i := range aTags {
+			if _, ok := uniqueTag[aTags[i]]; !ok {
+				upsertTags[j] = aTags[i]
+				j += 1
 			}
 		}
 	}
 
-	return availableValues
+	availableValues := make([]interface{}, len(objs)*updateSize)
+
+	c := 0
+	for i := range objs {
+		v := reflect.ValueOf(objs[i])
+
+		var upsertValues []interface{}
+		if isUpsert {
+			upsertValues = make([]interface{}, len(upsertTags))
+		}
+
+		k := 0
+		for j := 0; j < v.NumField(); j++ {
+			if tags[j] != "" {
+				availableValues[c] = v.Field(j).Interface()
+
+				if _, ok := uniqueTag[tags[j]]; !ok && isUpsert {
+					upsertValues[k] = availableValues[c]
+					k += 1
+				}
+
+				c += 1
+			}
+		}
+
+		for j := range upsertValues {
+			availableValues[c] = upsertValues[j]
+			c += 1
+		}
+	}
+
+	return availableValues, upsertTags
 }
 
 func isZeroOfUnderlyingType(x interface{}) bool {

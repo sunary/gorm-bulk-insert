@@ -1,6 +1,6 @@
-# Gorm Bulk Insert
+# Gorm Bulk Insert/Upsert
 
-`Gorm Bulk Insert` is a library to implement bulk insert using [gorm](https://github.com/jinzhu/gorm).
+`Gorm Bulk Insert` is a library to implement bulk insert/upsert using [gorm](https://github.com/jinzhu/gorm).
 
 ## Purpose
 
@@ -71,6 +71,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+    var bulkUpsertData []interface{}
+	for i := 0; i < 100; i++ {
+		bulkUpsertData = append(bulkUpsertData,
+			User{
+				UserName: "sunary",
+				Age:      22,
+				Hobby:    "soccer",
+			},
+		)
+	}
+
+    err = bulk.BulkUpsert(db, bulkUpsertData, []string{"name"})
+    // or err = bulk.BulkUpsertWithTableName(db, User{}.TableName(), bulkData, []string{"name"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 ```

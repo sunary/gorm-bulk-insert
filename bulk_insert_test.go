@@ -98,6 +98,31 @@ func TestBulkInsertWithTableName(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestBulkUpsert(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	require.NoError(t, err)
+
+	defer db.Close()
+
+	gdb, err := gorm.Open("mysql", db)
+	require.NoError(t, err)
+
+	insertData := insertData()
+
+	mock.ExpectBegin()
+	mock.ExpectExec(
+		fmt.Sprintf("INSERT INTO %s", user{}.TableName()),
+	).WithArgs(
+		reflect.ValueOf(insertData[0].UserName).Interface(), reflect.ValueOf(insertData[0].Age).Interface(), reflect.ValueOf(insertData[0].Age).Interface(),
+		reflect.ValueOf(insertData[1].UserName).Interface(), reflect.ValueOf(insertData[1].Age).Interface(), reflect.ValueOf(insertData[1].Age).Interface(),
+	).WillReturnResult(sqlmock.NewResult(2, 2))
+	mock.ExpectCommit()
+
+	bulkData := bulkData()
+	err = BulkUpsert(gdb, bulkData, []string{"name"})
+	require.NoError(t, err)
+}
+
 func Test_getTableName(t *testing.T) {
 	tests := []struct {
 		input interface{}
@@ -144,26 +169,44 @@ func Test_sliceValues(t *testing.T) {
 		objs          []interface{}
 		tags          []string
 		availableTags []string
+		uniqueKeys    []string
 	}
 	tests := []struct {
-		input input
-		want  []interface{}
+		input          input
+		wantValues     []interface{}
+		wantUpsertTags []string
 	}{
 		{
 			input: input{
 				objs:          bulkData,
 				tags:          []string{"", "name", "age", ""},
 				availableTags: []string{"name", "age"},
+				uniqueKeys:    nil,
 			},
-			want: []interface{}{
+			wantValues: []interface{}{
 				reflect.ValueOf(insertData[0].UserName).Interface(), reflect.ValueOf(insertData[0].Age).Interface(),
 				reflect.ValueOf(insertData[1].UserName).Interface(), reflect.ValueOf(insertData[1].Age).Interface(),
 			},
+			wantUpsertTags: nil,
+		},
+		{
+			input: input{
+				objs:          bulkData,
+				tags:          []string{"", "name", "age", ""},
+				availableTags: []string{"name", "age"},
+				uniqueKeys:    []string{"name"},
+			},
+			wantValues: []interface{}{
+				reflect.ValueOf(insertData[0].UserName).Interface(), reflect.ValueOf(insertData[0].Age).Interface(), reflect.ValueOf(insertData[0].Age).Interface(),
+				reflect.ValueOf(insertData[1].UserName).Interface(), reflect.ValueOf(insertData[1].Age).Interface(), reflect.ValueOf(insertData[1].Age).Interface(),
+			},
+			wantUpsertTags: []string{"age"},
 		},
 	}
 	for _, tt := range tests {
-		if got := sliceValues(tt.input.objs, tt.input.tags, tt.input.availableTags); !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("sliceValues(%v, %v, %v) = %v, want %v", tt.input.objs, tt.input.tags, tt.input.availableTags, got, tt.want)
+		if gotValues, gotTags := sliceValues(tt.input.objs, tt.input.tags, tt.input.availableTags, tt.input.uniqueKeys); !reflect.DeepEqual(gotValues, tt.wantValues) || !reflect.DeepEqual(gotTags, tt.wantUpsertTags) {
+			t.Errorf("sliceValues(%v, %v, %v, %v) = %v, %v, want %v, %v",
+				tt.input.objs, tt.input.tags, tt.input.availableTags, tt.input.uniqueKeys, gotValues, gotTags, tt.wantValues, tt.wantUpsertTags)
 		}
 	}
 }
