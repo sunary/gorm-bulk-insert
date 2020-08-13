@@ -60,31 +60,39 @@ func BulkUpsertWithTableName(db *gorm.DB, tableName string, bulks []interface{},
 		}
 
 		valueArgs, onUpdateFields := sliceValues(bulks[i*batchSize:maxBatchIndex], tags, aTags, uniqueKeys)
+
 		phStrs := make([]string, maxBatchIndex-i*batchSize)
 		placeholderStrs := "(?" + strings.Repeat(", ?", len(aTags)-1) + ")"
+		for j := range bulks[i*batchSize : maxBatchIndex] {
+			phStrs[j] = placeholderStrs
+		}
 
 		var upsertPhStrs []string
 		if isUpsert {
-			upsertPhStrs := make([]string, len(onUpdateFields))
+			upsertPhStrs = make([]string, len(onUpdateFields))
 			for j := range onUpdateFields {
 				upsertPhStrs[j] = fmt.Sprintf("%s = ?", onUpdateFields[j])
 			}
 		}
 
-		for j := range bulks[i*batchSize : maxBatchIndex] {
-			phStrs[j] = placeholderStrs
-		}
-
-		var smt string
 		if isUpsert {
-			smt = fmt.Sprintf("INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s", tableName, fields, strings.Join(phStrs, ",\n"), strings.Join(upsertPhStrs, ","))
+			numArgs := len(aTags) + len(onUpdateFields)
+			upsertPlaceholderStr := strings.Join(upsertPhStrs, ",")
+			for j := 0; j < len(valueArgs); j += numArgs {
+				smt := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s ON DUPLICATE KEY UPDATE %s", tableName, fields, placeholderStrs, upsertPlaceholderStr)
+				err := tx.Exec(smt, valueArgs[j:min(j+numArgs, len(valueArgs)-1)]...).Error
+				if err != nil {
+					tx.Rollback()
+					return err
+				}
+			}
 		} else {
-			smt = fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", tableName, fields, strings.Join(phStrs, ",\n"))
-		}
-		err := tx.Exec(smt, valueArgs...).Error
-		if err != nil {
-			tx.Rollback()
-			return err
+			smt := fmt.Sprintf("INSERT INTO %s (%s) VALUES %s", tableName, fields, strings.Join(phStrs, ",\n"))
+			err := tx.Exec(smt, valueArgs...).Error
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 

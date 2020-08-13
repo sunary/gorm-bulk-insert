@@ -64,3 +64,10 @@ func isLowercase(r rune) bool {
 func isUppercase(r rune) bool {
 	return r >= 'A' && r <= 'Z'
 }
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}

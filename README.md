@@ -94,7 +94,7 @@ func main() {
 	}
 
 	err = bulk.BulkUpsert(db, bulkUpsertData, []string{"name"})
-	// or err = bulk.BulkUpsertWithTableName(db, User{}.TableName(), bulkData, []string{"name"})
+	// or err = bulk.BulkUpsertWithTableName(db, User{}.TableName(), bulkUpsertData, []string{"name"})
 	if err != nil {
 		log.Fatal(err)
 	}

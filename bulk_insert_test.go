@@ -114,8 +114,12 @@ func TestBulkUpsert(t *testing.T) {
 		fmt.Sprintf("INSERT INTO %s", user{}.TableName()),
 	).WithArgs(
 		reflect.ValueOf(insertData[0].UserName).Interface(), reflect.ValueOf(insertData[0].Age).Interface(), reflect.ValueOf(insertData[0].Age).Interface(),
+	)
+	mock.ExpectExec(
+		fmt.Sprintf("INSERT INTO %s", user{}.TableName()),
+	).WithArgs(
 		reflect.ValueOf(insertData[1].UserName).Interface(), reflect.ValueOf(insertData[1].Age).Interface(), reflect.ValueOf(insertData[1].Age).Interface(),
-	).WillReturnResult(sqlmock.NewResult(2, 2))
+	).WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
 
 	bulkData := bulkData()
