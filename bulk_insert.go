@@ -1,6 +1,7 @@
 package bulk
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -29,6 +30,9 @@ func BulkInsertWithTableName(db *gorm.DB, tableName string, bulks []interface{})
 
 // BulkUpsert
 func BulkUpsert(db *gorm.DB, bulks []interface{}, uniqueKeys []string) error {
+	if len(bulks) == 0 {
+		return errors.New("empty data")
+	}
 	return BulkUpsertWithTableName(db, getTableName(bulks[0]), bulks, uniqueKeys)
 }
 
